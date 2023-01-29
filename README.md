@@ -6,6 +6,8 @@
 
 ## JVM
 
+## mysql
+
 # 近期更新
 
-mysql、JUC
+JUC、面试题
