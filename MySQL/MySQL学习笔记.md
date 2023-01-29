@@ -13311,15 +13311,17 @@ SELECT * FROM performance_schema.data_locks\G
 
 间隙锁的引入，可能会导致同样的语句锁住更大的范围，这其实是影响了并发度的。
 
-3（X锁） 4
-
-![image-20230129153940903](/image-20230129153940903.png)
-
-1 2（S锁） 5
+session1：1（S锁） 4
 
 ![image-20230129154010086](/image-20230129154010086.png)
 
-那边报错了，这边成功了
+session2：2（X锁）3
+
+![image-20230129153940903](/image-20230129153940903.png)
+
+session1先锁，session2后锁，session2要修改数据但是被session1锁住了，session1要修改数据被session2锁住了
+
+session2报错了，session1成功了
 
 ![image-20230129154024779](/image-20230129154024779.png)
 
@@ -13822,7 +13824,7 @@ UPDATE student SET ... # 排他锁
 
 student表数据如下：
 
-![image-20220208162828266](file://C:/Users/%E5%B9%BB%E6%83%B3%E5%AE%B6%E6%87%92%E5%BE%97%E6%83%B3%E4%BA%86/AppData/Roaming/Typora/typora-user-images/image-20220208162828266.png?lastModify=1646465884)
+![image-20230129213151020](/image-20230129213151020.png)
 
 假设插入该记录事务id为8，那么此刻该条记录的示意图如图所示：
 
