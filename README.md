@@ -10,7 +10,7 @@ JVM
 
 mysql
 
-Spring、SpringMVC、SpringBoot
+Spring、SpringMVC、SpringBoot、SpringCloud部分组件
 
 # 近期更新
 
