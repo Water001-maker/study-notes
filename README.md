@@ -12,6 +12,8 @@ mysql
 
 Spring、SpringMVC、SpringBoot、SpringCloud部分组件
 
+JUC
+
 # 近期更新
 
-JUC、Redis
+Redis、linux、ES、MQ
