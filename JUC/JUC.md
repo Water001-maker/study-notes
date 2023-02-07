@@ -500,6 +500,82 @@ private transient int firstReaderHoldCount ;
 
 读锁还针对最后一个获取读锁的线程， 单路的将HoldCounter从ThreadLocal中取出， 放到属性中，以后就不需要反复的从ThreadLocal获取
 
+### 锁降级
+
+锁降级指的是写锁降级成为读锁。如果当前线程拥有写锁，然后将其释放，最后再获取读锁，这种分段完成的过程不能称之为锁降级。锁降级是指把持住（当前拥有的）写锁，再获取到读锁，随后释放（先前拥有的）写锁的过程。
+
+**锁降级的必要性**
+
+主要是为了保证数据的可见性，如果当前线程不获取读锁而是直接释放写锁， 假设此刻另一个线程（记作线程T）获取了写锁并修改了数据，那么当前线程无法感知线程T的数据更新。如果当前线程获取读锁，即遵循锁降级的步骤，则线程T将会被阻塞，直到当前线程使用数据并释放读锁之后，线程T才能获取写锁进行数据更新。
+
+**实现**
+
+使用ReentrantReadWriteLock实现锁降级
+
+```java
+package com.xz.thread.t12;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+
+/**
+ * @description: ReentrantReadWriteLock降级锁示例
+ * @author: xz
+ * @create: 2021-05-17 22:09
+ */
+public class Demo {
+    /**
+     *    1、ReentrantReadWriteLock实例实现了ReadWriteLock接口
+     *    2、声明一个ReentrantReadWriteLock实例，指向父类ReadWriteLock的引用
+     *       因为ReentrantReadWriteLock可以保证公平或者非公平
+     *    3、ReadWriteLock类中只有readLock()和writeLock() 两个方法
+     */
+    private ReadWriteLock rwl =new ReentrantReadWriteLock();
+
+    //读锁
+    private Lock r =rwl.readLock();
+    //写锁
+    private Lock w =rwl.writeLock();
+
+    //声明一个map,存储数据
+    private Map<String,Object> map =new HashMap<>();
+    //声明一个boolean类型的状态，用于判断是读操作还是写操作;volatile关键字保证可见性
+    private volatile boolean isUpdateStatus;
+
+    //定义一个读写方法
+    public void readWriteMethod(){
+        r.lock();//为了保证isUpdateStatus能够获取到最新的值，添加读锁
+        if(isUpdateStatus){//如果isUpdateStatus是最新的值
+            r.unlock();//因为要进行写操作，所以需要释放读锁
+            w.lock();//在写操作之前，为了保证写的状态，需要加写锁
+            map.put("key1","v1");//写操作
+            //开始锁降级;
+            //再写操作没有释放的时候，获取到读锁，再释放写锁
+            r.lock();
+            w.unlock();//写操作完成后释放写锁
+            //锁降级完成;
+        }
+        Object obj = map.get("key1");//写操作
+        r.unlock();//释放读锁
+        System.out.println(Thread.currentThread().getName()+"读操作获取到的值："+obj);
+
+    }
+
+}
+```
+
+**总结**
+
+首先你没理解读写锁的意义，读锁的存在意味着不允许其他写操作的存在。
+
+按照你提供的例子，可能存在一个事务线程不希望自己的操作被别的线程中断，而这个事务操作可能分成多部分操作更新不同的数据（或表）甚至非常耗时。如果长时间用写锁独占，显然对于某些高响应的应用是不允许的，所以在完成部分写操作后，退而使用读锁降级，来允许响应其他进程的读操作。只有当全部事务完成后才真正释放锁。
+按你的理解如果当中写锁被其他线程占用，那么这个事务线程将不得不中断等待别的写锁释放。
+
+所以总结下锁降级的意义应该就是：在一边读一边写的情况下提高性能。
+
 # 3、线程间通信
 
 ## 生产者和消费者问题
