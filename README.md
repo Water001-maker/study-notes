@@ -14,6 +14,14 @@ Spring、SpringMVC、SpringBoot、SpringCloud部分组件
 
 JUC
 
-# 近期更新
+Redis
 
-Redis、linux、ES、MQ
+linux
+
+ES
+
+MQ
+
+# 后续更新
+
+面试题、中间件
